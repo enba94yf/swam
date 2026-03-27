@@ -1,0 +1,651 @@
+#ifndef SWAM_SCENARIOS_H
+#define SWAM_SCENARIOS_H
+
+#include <stdbool.h>
+#include <stdint.h>
+
+// Target memory instruction kind.
+typedef enum {
+    SWAM_OP_I32_LOAD,
+    SWAM_OP_I32_LOAD8_U,
+    SWAM_OP_I32_LOAD8_S,
+    SWAM_OP_I32_LOAD16_U,
+    SWAM_OP_I32_LOAD16_S,
+    SWAM_OP_I32_STORE,
+    SWAM_OP_I32_STORE8,
+    SWAM_OP_I32_STORE16,
+    SWAM_OP_I64_LOAD,
+    SWAM_OP_I64_LOAD8_U,
+    SWAM_OP_I64_LOAD8_S,
+    SWAM_OP_I64_LOAD16_U,
+    SWAM_OP_I64_LOAD16_S,
+    SWAM_OP_I64_LOAD32_U,
+    SWAM_OP_I64_LOAD32_S,
+    SWAM_OP_I64_STORE,
+    SWAM_OP_I64_STORE8,
+    SWAM_OP_I64_STORE16,
+    SWAM_OP_I64_STORE32,
+    SWAM_OP_F32_LOAD,
+    SWAM_OP_F32_STORE,
+    SWAM_OP_F64_LOAD,
+    SWAM_OP_F64_STORE,
+    /* Atomic load/store (threads proposal, shared memory) */
+    SWAM_OP_I32_ATOMIC_LOAD,
+    SWAM_OP_I32_ATOMIC_LOAD8_U,
+    SWAM_OP_I32_ATOMIC_LOAD16_U,
+    SWAM_OP_I32_ATOMIC_STORE,
+    SWAM_OP_I32_ATOMIC_STORE8,
+    SWAM_OP_I32_ATOMIC_STORE16,
+    SWAM_OP_I64_ATOMIC_LOAD,
+    SWAM_OP_I64_ATOMIC_LOAD8_U,
+    SWAM_OP_I64_ATOMIC_LOAD16_U,
+    SWAM_OP_I64_ATOMIC_LOAD32_U,
+    SWAM_OP_I64_ATOMIC_STORE,
+    SWAM_OP_I64_ATOMIC_STORE8,
+    SWAM_OP_I64_ATOMIC_STORE16,
+    SWAM_OP_I64_ATOMIC_STORE32,
+    /* Atomic RMW operations (threads proposal, shared memory) */
+    /* --- ADD --- */
+    SWAM_OP_I32_ATOMIC_RMW_ADD,
+    SWAM_OP_I64_ATOMIC_RMW_ADD,
+    SWAM_OP_I32_ATOMIC_RMW8_ADD_U,
+    SWAM_OP_I32_ATOMIC_RMW16_ADD_U,
+    SWAM_OP_I64_ATOMIC_RMW8_ADD_U,
+    SWAM_OP_I64_ATOMIC_RMW16_ADD_U,
+    SWAM_OP_I64_ATOMIC_RMW32_ADD_U,
+    /* --- SUB --- */
+    SWAM_OP_I32_ATOMIC_RMW_SUB,
+    SWAM_OP_I64_ATOMIC_RMW_SUB,
+    SWAM_OP_I32_ATOMIC_RMW8_SUB_U,
+    SWAM_OP_I32_ATOMIC_RMW16_SUB_U,
+    SWAM_OP_I64_ATOMIC_RMW8_SUB_U,
+    SWAM_OP_I64_ATOMIC_RMW16_SUB_U,
+    SWAM_OP_I64_ATOMIC_RMW32_SUB_U,
+    /* --- AND --- */
+    SWAM_OP_I32_ATOMIC_RMW_AND,
+    SWAM_OP_I64_ATOMIC_RMW_AND,
+    SWAM_OP_I32_ATOMIC_RMW8_AND_U,
+    SWAM_OP_I32_ATOMIC_RMW16_AND_U,
+    SWAM_OP_I64_ATOMIC_RMW8_AND_U,
+    SWAM_OP_I64_ATOMIC_RMW16_AND_U,
+    SWAM_OP_I64_ATOMIC_RMW32_AND_U,
+    /* --- OR --- */
+    SWAM_OP_I32_ATOMIC_RMW_OR,
+    SWAM_OP_I64_ATOMIC_RMW_OR,
+    SWAM_OP_I32_ATOMIC_RMW8_OR_U,
+    SWAM_OP_I32_ATOMIC_RMW16_OR_U,
+    SWAM_OP_I64_ATOMIC_RMW8_OR_U,
+    SWAM_OP_I64_ATOMIC_RMW16_OR_U,
+    SWAM_OP_I64_ATOMIC_RMW32_OR_U,
+    /* --- XOR --- */
+    SWAM_OP_I32_ATOMIC_RMW_XOR,
+    SWAM_OP_I64_ATOMIC_RMW_XOR,
+    SWAM_OP_I32_ATOMIC_RMW8_XOR_U,
+    SWAM_OP_I32_ATOMIC_RMW16_XOR_U,
+    SWAM_OP_I64_ATOMIC_RMW8_XOR_U,
+    SWAM_OP_I64_ATOMIC_RMW16_XOR_U,
+    SWAM_OP_I64_ATOMIC_RMW32_XOR_U,
+    /* --- XCHG --- */
+    SWAM_OP_I32_ATOMIC_RMW_XCHG,
+    SWAM_OP_I64_ATOMIC_RMW_XCHG,
+    SWAM_OP_I32_ATOMIC_RMW8_XCHG_U,
+    SWAM_OP_I32_ATOMIC_RMW16_XCHG_U,
+    SWAM_OP_I64_ATOMIC_RMW8_XCHG_U,
+    SWAM_OP_I64_ATOMIC_RMW16_XCHG_U,
+    SWAM_OP_I64_ATOMIC_RMW32_XCHG_U,
+    /* Atomic cmpxchg operations (threads proposal, shared memory) */
+    SWAM_OP_I32_ATOMIC_RMW_CMPXCHG,
+    SWAM_OP_I64_ATOMIC_RMW_CMPXCHG,
+    SWAM_OP_I32_ATOMIC_RMW8_CMPXCHG_U,
+    SWAM_OP_I32_ATOMIC_RMW16_CMPXCHG_U,
+    SWAM_OP_I64_ATOMIC_RMW8_CMPXCHG_U,
+    SWAM_OP_I64_ATOMIC_RMW16_CMPXCHG_U,
+    SWAM_OP_I64_ATOMIC_RMW32_CMPXCHG_U,
+    /* Wait/notify operations (threads proposal, shared memory) */
+    SWAM_OP_MEMORY_ATOMIC_WAIT32,     // memory.atomic.wait32   W=4, i32
+    SWAM_OP_MEMORY_ATOMIC_WAIT64,     // memory.atomic.wait64   W=8, i64
+    SWAM_OP_MEMORY_ATOMIC_NOTIFY,     // memory.atomic.notify   W=4, i32
+    /* SIMD v128 memory instructions (SIMD proposal) */
+    SWAM_OP_V128_LOAD,
+    SWAM_OP_V128_LOAD8X8_S,
+    SWAM_OP_V128_LOAD8X8_U,
+    SWAM_OP_V128_LOAD16X4_S,
+    SWAM_OP_V128_LOAD16X4_U,
+    SWAM_OP_V128_LOAD32X2_S,
+    SWAM_OP_V128_LOAD32X2_U,
+    SWAM_OP_V128_LOAD8_SPLAT,
+    SWAM_OP_V128_LOAD16_SPLAT,
+    SWAM_OP_V128_LOAD32_SPLAT,
+    SWAM_OP_V128_LOAD64_SPLAT,
+    SWAM_OP_V128_LOAD32_ZERO,
+    SWAM_OP_V128_LOAD64_ZERO,
+    SWAM_OP_V128_LOAD8_LANE,
+    SWAM_OP_V128_LOAD16_LANE,
+    SWAM_OP_V128_LOAD32_LANE,
+    SWAM_OP_V128_LOAD64_LANE,
+    SWAM_OP_V128_STORE,
+    SWAM_OP_V128_STORE8_LANE,
+    SWAM_OP_V128_STORE16_LANE,
+    SWAM_OP_V128_STORE32_LANE,
+    SWAM_OP_V128_STORE64_LANE,
+    /* Bulk memory operations (bulk-memory proposal) */
+    SWAM_OP_MEMORY_COPY,
+    SWAM_OP_MEMORY_FILL,
+    SWAM_OP_MEMORY_INIT,
+    SWAM_OP_MEMORY_GROW,
+    SWAM_OP_COUNT
+} SwamOpKind;
+
+// Boundary layout dimension.
+typedef enum {
+    SWAM_LAYOUT_INTERIOR,
+    SWAM_LAYOUT_BOUNDARY,
+    SWAM_LAYOUT_OOB,
+    SWAM_LAYOUT_COUNT
+} SwamLayout;
+
+// Address arithmetic wrap dimension.
+typedef enum {
+    SWAM_WRAP_NO_WRAP,
+    SWAM_WRAP_OVERFLOW,
+    SWAM_WRAP_COUNT
+} SwamWrap;
+
+// Alignment dimension (for atomic operations on shared memory).
+typedef enum {
+    SWAM_ALIGN_ALIGNED,
+    SWAM_ALIGN_MISALIGNED,
+    SWAM_ALIGN_NA,
+    SWAM_ALIGN_COUNT
+} SwamAlign;
+
+// Expected specification outcome.
+typedef enum {
+    SWAM_EXPECT_TRAP,
+    SWAM_EXPECT_NO_TRAP,
+    SWAM_EXPECT_UNKNOWN,
+} SwamExpected;
+
+// Value type operated on by the instruction.
+typedef enum {
+    SWAM_VALTYPE_I32,
+    SWAM_VALTYPE_I64,
+    SWAM_VALTYPE_F32,
+    SWAM_VALTYPE_F64,
+    SWAM_VALTYPE_V128,
+} SwamValType;
+
+// Probe-generation class for the target instruction.
+typedef enum {
+    SWAM_OPCLASS_LOAD,
+    SWAM_OPCLASS_STORE,
+    SWAM_OPCLASS_MEMORY_GROW,
+    SWAM_OPCLASS_ATOMIC_LOAD,
+    SWAM_OPCLASS_ATOMIC_STORE,
+    SWAM_OPCLASS_ATOMIC_RMW,
+    SWAM_OPCLASS_ATOMIC_CMPXCHG,
+    SWAM_OPCLASS_ATOMIC_WAIT,
+    SWAM_OPCLASS_ATOMIC_NOTIFY,
+    SWAM_OPCLASS_SIMD_LOAD,
+    SWAM_OPCLASS_SIMD_LOAD_LANE,
+    SWAM_OPCLASS_SIMD_STORE,
+    SWAM_OPCLASS_SIMD_STORE_LANE,
+    SWAM_OPCLASS_BULK_COPY,
+    SWAM_OPCLASS_BULK_FILL,
+    SWAM_OPCLASS_BULK_INIT,
+} SwamOpClass;
+
+// A single boundary scenario.
+typedef struct {
+    uint32_t id;
+    SwamOpKind op_kind;
+    SwamOpClass op_class;
+    SwamLayout layout;
+    SwamExpected expected;
+    uint32_t access_width;
+    bool is_signed;
+    SwamValType value_type;
+    SwamWrap wrap;
+    SwamAlign align;
+} SwamScenario;
+
+#define SWAM_SCENARIO_ENTRY(id_, op_, class_, layout_, expected_, width_, signed_, type_, wrap_, align_) \
+    {                                                                                                     \
+        (id_), (op_), (class_), (layout_), (expected_), (width_), (signed_), (type_), (wrap_), (align_) \
+    }
+
+#define SWAM_LAYOUT_SCENARIOS(base_id_, op_, class_, width_, signed_, type_)                             \
+    SWAM_SCENARIO_ENTRY((base_id_), (op_), (class_), SWAM_LAYOUT_INTERIOR, SWAM_EXPECT_NO_TRAP,         \
+                        (width_), (signed_), (type_), SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA),                 \
+        SWAM_SCENARIO_ENTRY((base_id_) + 1U, (op_), (class_), SWAM_LAYOUT_BOUNDARY,                      \
+                            SWAM_EXPECT_NO_TRAP, (width_), (signed_), (type_), SWAM_WRAP_NO_WRAP,        \
+                            SWAM_ALIGN_NA),                                                               \
+        SWAM_SCENARIO_ENTRY((base_id_) + 2U, (op_), (class_), SWAM_LAYOUT_OOB, SWAM_EXPECT_TRAP,        \
+                            (width_), (signed_), (type_), SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA)
+
+#define SWAM_MEMORY_GROW_SCENARIOS(base_id_)                                                              \
+    SWAM_SCENARIO_ENTRY((base_id_), SWAM_OP_MEMORY_GROW, SWAM_OPCLASS_MEMORY_GROW,                       \
+                        SWAM_LAYOUT_INTERIOR, SWAM_EXPECT_UNKNOWN, 0U, false, SWAM_VALTYPE_I32,          \
+                        SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA),                                                \
+        SWAM_SCENARIO_ENTRY((base_id_) + 1U, SWAM_OP_MEMORY_GROW, SWAM_OPCLASS_MEMORY_GROW,              \
+                            SWAM_LAYOUT_BOUNDARY, SWAM_EXPECT_UNKNOWN, 0U, false, SWAM_VALTYPE_I32,      \
+                            SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA),                                            \
+        SWAM_SCENARIO_ENTRY((base_id_) + 2U, SWAM_OP_MEMORY_GROW, SWAM_OPCLASS_MEMORY_GROW,              \
+                            SWAM_LAYOUT_OOB, SWAM_EXPECT_UNKNOWN, 0U, false, SWAM_VALTYPE_I32,           \
+                            SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA)
+
+#define SWAM_OVERFLOW_SCENARIO(id_, op_, class_, width_, signed_, type_)                                 \
+    SWAM_SCENARIO_ENTRY((id_), (op_), (class_), SWAM_LAYOUT_INTERIOR, SWAM_EXPECT_TRAP,                  \
+                        (width_), (signed_), (type_), SWAM_WRAP_OVERFLOW, SWAM_ALIGN_NA)
+
+#define SWAM_BULK_SCENARIOS(base_id_, op_, class_)                                                        \
+    SWAM_SCENARIO_ENTRY((base_id_), (op_), (class_), SWAM_LAYOUT_INTERIOR, SWAM_EXPECT_NO_TRAP,         \
+                        1U, false, SWAM_VALTYPE_I32, SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA),                  \
+        SWAM_SCENARIO_ENTRY((base_id_) + 1U, (op_), (class_), SWAM_LAYOUT_BOUNDARY,                      \
+                            SWAM_EXPECT_NO_TRAP, 1U, false, SWAM_VALTYPE_I32, SWAM_WRAP_NO_WRAP,         \
+                            SWAM_ALIGN_NA),                                                               \
+        SWAM_SCENARIO_ENTRY((base_id_) + 2U, (op_), (class_), SWAM_LAYOUT_OOB, SWAM_EXPECT_TRAP,        \
+                            1U, false, SWAM_VALTYPE_I32, SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA)
+
+#define SWAM_ATOMIC_W1_SCENARIOS(base_id_, op_, class_, type_)                                            \
+    SWAM_SCENARIO_ENTRY((base_id_), (op_), (class_), SWAM_LAYOUT_INTERIOR, SWAM_EXPECT_NO_TRAP,          \
+                        1U, false, (type_), SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA),                            \
+        SWAM_SCENARIO_ENTRY((base_id_) + 1U, (op_), (class_), SWAM_LAYOUT_BOUNDARY,                       \
+                            SWAM_EXPECT_NO_TRAP, 1U, false, (type_), SWAM_WRAP_NO_WRAP,                   \
+                            SWAM_ALIGN_NA),                                                                \
+        SWAM_SCENARIO_ENTRY((base_id_) + 2U, (op_), (class_), SWAM_LAYOUT_OOB, SWAM_EXPECT_TRAP,         \
+                            1U, false, (type_), SWAM_WRAP_NO_WRAP, SWAM_ALIGN_NA),                        \
+        SWAM_SCENARIO_ENTRY((base_id_) + 3U, (op_), (class_), SWAM_LAYOUT_INTERIOR,                       \
+                            SWAM_EXPECT_TRAP, 1U, false, (type_), SWAM_WRAP_OVERFLOW,                     \
+                            SWAM_ALIGN_NA)
+
+#define SWAM_ATOMIC_ALIGN_SCENARIOS(base_id_, op_, class_, width_, type_)                                 \
+    SWAM_SCENARIO_ENTRY((base_id_), (op_), (class_), SWAM_LAYOUT_INTERIOR, SWAM_EXPECT_NO_TRAP,          \
+                        (width_), false, (type_), SWAM_WRAP_NO_WRAP, SWAM_ALIGN_ALIGNED),                 \
+        SWAM_SCENARIO_ENTRY((base_id_) + 1U, (op_), (class_), SWAM_LAYOUT_BOUNDARY,                       \
+                            SWAM_EXPECT_NO_TRAP, (width_), false, (type_), SWAM_WRAP_NO_WRAP,             \
+                            SWAM_ALIGN_ALIGNED),                                                           \
+        SWAM_SCENARIO_ENTRY((base_id_) + 2U, (op_), (class_), SWAM_LAYOUT_OOB, SWAM_EXPECT_TRAP,         \
+                            (width_), false, (type_), SWAM_WRAP_NO_WRAP, SWAM_ALIGN_ALIGNED),             \
+        SWAM_SCENARIO_ENTRY((base_id_) + 3U, (op_), (class_), SWAM_LAYOUT_INTERIOR,                       \
+                            SWAM_EXPECT_TRAP, (width_), false, (type_), SWAM_WRAP_NO_WRAP,                \
+                            SWAM_ALIGN_MISALIGNED),                                                        \
+        SWAM_SCENARIO_ENTRY((base_id_) + 4U, (op_), (class_), SWAM_LAYOUT_BOUNDARY,                       \
+                            SWAM_EXPECT_TRAP, (width_), false, (type_), SWAM_WRAP_NO_WRAP,                \
+                            SWAM_ALIGN_MISALIGNED),                                                        \
+        SWAM_SCENARIO_ENTRY((base_id_) + 5U, (op_), (class_), SWAM_LAYOUT_OOB, SWAM_EXPECT_TRAP,         \
+                            (width_), false, (type_), SWAM_WRAP_NO_WRAP, SWAM_ALIGN_MISALIGNED),          \
+        SWAM_SCENARIO_ENTRY((base_id_) + 6U, (op_), (class_), SWAM_LAYOUT_INTERIOR,                       \
+                            SWAM_EXPECT_TRAP, (width_), false, (type_), SWAM_WRAP_OVERFLOW,               \
+                            SWAM_ALIGN_ALIGNED)
+
+static const SwamScenario swam_scenario_catalog[] = {
+    SWAM_LAYOUT_SCENARIOS(1U, SWAM_OP_I32_LOAD, SWAM_OPCLASS_LOAD, 4U, false, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(4U, SWAM_OP_I32_LOAD8_U, SWAM_OPCLASS_LOAD, 1U, false, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(7U, SWAM_OP_I32_LOAD8_S, SWAM_OPCLASS_LOAD, 1U, true, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(10U, SWAM_OP_I32_LOAD16_U, SWAM_OPCLASS_LOAD, 2U, false, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(13U, SWAM_OP_I32_LOAD16_S, SWAM_OPCLASS_LOAD, 2U, true, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(16U, SWAM_OP_I32_STORE, SWAM_OPCLASS_STORE, 4U, false, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(19U, SWAM_OP_I32_STORE8, SWAM_OPCLASS_STORE, 1U, false, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(22U, SWAM_OP_I32_STORE16, SWAM_OPCLASS_STORE, 2U, false, SWAM_VALTYPE_I32),
+    SWAM_LAYOUT_SCENARIOS(25U, SWAM_OP_I64_LOAD, SWAM_OPCLASS_LOAD, 8U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(28U, SWAM_OP_I64_LOAD8_U, SWAM_OPCLASS_LOAD, 1U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(31U, SWAM_OP_I64_LOAD8_S, SWAM_OPCLASS_LOAD, 1U, true, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(34U, SWAM_OP_I64_LOAD16_U, SWAM_OPCLASS_LOAD, 2U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(37U, SWAM_OP_I64_LOAD16_S, SWAM_OPCLASS_LOAD, 2U, true, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(40U, SWAM_OP_I64_LOAD32_U, SWAM_OPCLASS_LOAD, 4U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(43U, SWAM_OP_I64_LOAD32_S, SWAM_OPCLASS_LOAD, 4U, true, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(46U, SWAM_OP_I64_STORE, SWAM_OPCLASS_STORE, 8U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(49U, SWAM_OP_I64_STORE8, SWAM_OPCLASS_STORE, 1U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(52U, SWAM_OP_I64_STORE16, SWAM_OPCLASS_STORE, 2U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(55U, SWAM_OP_I64_STORE32, SWAM_OPCLASS_STORE, 4U, false, SWAM_VALTYPE_I64),
+    SWAM_LAYOUT_SCENARIOS(58U, SWAM_OP_F32_LOAD, SWAM_OPCLASS_LOAD, 4U, false, SWAM_VALTYPE_F32),
+    SWAM_LAYOUT_SCENARIOS(61U, SWAM_OP_F32_STORE, SWAM_OPCLASS_STORE, 4U, false, SWAM_VALTYPE_F32),
+    SWAM_LAYOUT_SCENARIOS(64U, SWAM_OP_F64_LOAD, SWAM_OPCLASS_LOAD, 8U, false, SWAM_VALTYPE_F64),
+    SWAM_LAYOUT_SCENARIOS(67U, SWAM_OP_F64_STORE, SWAM_OPCLASS_STORE, 8U, false, SWAM_VALTYPE_F64),
+    SWAM_MEMORY_GROW_SCENARIOS(70U),
+
+    /* --- OVERFLOW (wrap) scenarios: one per load/store op --- */
+    SWAM_OVERFLOW_SCENARIO(73U, SWAM_OP_I32_LOAD, SWAM_OPCLASS_LOAD, 4U, false, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(74U, SWAM_OP_I32_LOAD8_U, SWAM_OPCLASS_LOAD, 1U, false, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(75U, SWAM_OP_I32_LOAD8_S, SWAM_OPCLASS_LOAD, 1U, true, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(76U, SWAM_OP_I32_LOAD16_U, SWAM_OPCLASS_LOAD, 2U, false, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(77U, SWAM_OP_I32_LOAD16_S, SWAM_OPCLASS_LOAD, 2U, true, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(78U, SWAM_OP_I32_STORE, SWAM_OPCLASS_STORE, 4U, false, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(79U, SWAM_OP_I32_STORE8, SWAM_OPCLASS_STORE, 1U, false, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(80U, SWAM_OP_I32_STORE16, SWAM_OPCLASS_STORE, 2U, false, SWAM_VALTYPE_I32),
+    SWAM_OVERFLOW_SCENARIO(81U, SWAM_OP_I64_LOAD, SWAM_OPCLASS_LOAD, 8U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(82U, SWAM_OP_I64_LOAD8_U, SWAM_OPCLASS_LOAD, 1U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(83U, SWAM_OP_I64_LOAD8_S, SWAM_OPCLASS_LOAD, 1U, true, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(84U, SWAM_OP_I64_LOAD16_U, SWAM_OPCLASS_LOAD, 2U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(85U, SWAM_OP_I64_LOAD16_S, SWAM_OPCLASS_LOAD, 2U, true, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(86U, SWAM_OP_I64_LOAD32_U, SWAM_OPCLASS_LOAD, 4U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(87U, SWAM_OP_I64_LOAD32_S, SWAM_OPCLASS_LOAD, 4U, true, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(88U, SWAM_OP_I64_STORE, SWAM_OPCLASS_STORE, 8U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(89U, SWAM_OP_I64_STORE8, SWAM_OPCLASS_STORE, 1U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(90U, SWAM_OP_I64_STORE16, SWAM_OPCLASS_STORE, 2U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(91U, SWAM_OP_I64_STORE32, SWAM_OPCLASS_STORE, 4U, false, SWAM_VALTYPE_I64),
+    SWAM_OVERFLOW_SCENARIO(92U, SWAM_OP_F32_LOAD, SWAM_OPCLASS_LOAD, 4U, false, SWAM_VALTYPE_F32),
+    SWAM_OVERFLOW_SCENARIO(93U, SWAM_OP_F32_STORE, SWAM_OPCLASS_STORE, 4U, false, SWAM_VALTYPE_F32),
+    SWAM_OVERFLOW_SCENARIO(94U, SWAM_OP_F64_LOAD, SWAM_OPCLASS_LOAD, 8U, false, SWAM_VALTYPE_F64),
+    SWAM_OVERFLOW_SCENARIO(95U, SWAM_OP_F64_STORE, SWAM_OPCLASS_STORE, 8U, false, SWAM_VALTYPE_F64),
+
+    /* --- Atomic ops with W=1: no alignment dimension (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(96U, SWAM_OP_I32_ATOMIC_LOAD8_U, SWAM_OPCLASS_ATOMIC_LOAD, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(100U, SWAM_OP_I32_ATOMIC_STORE8, SWAM_OPCLASS_ATOMIC_STORE, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(104U, SWAM_OP_I64_ATOMIC_LOAD8_U, SWAM_OPCLASS_ATOMIC_LOAD, SWAM_VALTYPE_I64),
+    SWAM_ATOMIC_W1_SCENARIOS(108U, SWAM_OP_I64_ATOMIC_STORE8, SWAM_OPCLASS_ATOMIC_STORE, SWAM_VALTYPE_I64),
+
+    /* --- Atomic ops with W=2: layout x align + OVERFLOW (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(112U, SWAM_OP_I32_ATOMIC_LOAD16_U, SWAM_OPCLASS_ATOMIC_LOAD, 2U,
+                                SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(119U, SWAM_OP_I32_ATOMIC_STORE16, SWAM_OPCLASS_ATOMIC_STORE, 2U,
+                                SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(126U, SWAM_OP_I64_ATOMIC_LOAD16_U, SWAM_OPCLASS_ATOMIC_LOAD, 2U,
+                                SWAM_VALTYPE_I64),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(133U, SWAM_OP_I64_ATOMIC_STORE16, SWAM_OPCLASS_ATOMIC_STORE, 2U,
+                                SWAM_VALTYPE_I64),
+
+    /* --- Atomic ops with W=4: layout x align + OVERFLOW (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(140U, SWAM_OP_I32_ATOMIC_LOAD, SWAM_OPCLASS_ATOMIC_LOAD, 4U,
+                                SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(147U, SWAM_OP_I32_ATOMIC_STORE, SWAM_OPCLASS_ATOMIC_STORE, 4U,
+                                SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(154U, SWAM_OP_I64_ATOMIC_LOAD32_U, SWAM_OPCLASS_ATOMIC_LOAD, 4U,
+                                SWAM_VALTYPE_I64),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(161U, SWAM_OP_I64_ATOMIC_STORE32, SWAM_OPCLASS_ATOMIC_STORE, 4U,
+                                SWAM_VALTYPE_I64),
+
+    /* --- Atomic ops with W=8: layout x align + OVERFLOW (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(168U, SWAM_OP_I64_ATOMIC_LOAD, SWAM_OPCLASS_ATOMIC_LOAD, 8U,
+                                SWAM_VALTYPE_I64),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(175U, SWAM_OP_I64_ATOMIC_STORE, SWAM_OPCLASS_ATOMIC_STORE, 8U,
+                                SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW ADD: W=1 (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(182U, SWAM_OP_I32_ATOMIC_RMW8_ADD_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(186U, SWAM_OP_I64_ATOMIC_RMW8_ADD_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW ADD: W=2 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(190U, SWAM_OP_I32_ATOMIC_RMW16_ADD_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(197U, SWAM_OP_I64_ATOMIC_RMW16_ADD_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW ADD: W=4 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(204U, SWAM_OP_I32_ATOMIC_RMW_ADD,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(211U, SWAM_OP_I64_ATOMIC_RMW32_ADD_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW ADD: W=8 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(218U, SWAM_OP_I64_ATOMIC_RMW_ADD,
+                                SWAM_OPCLASS_ATOMIC_RMW, 8U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW SUB: W=1 (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(225U, SWAM_OP_I32_ATOMIC_RMW8_SUB_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(229U, SWAM_OP_I64_ATOMIC_RMW8_SUB_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW SUB: W=2 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(233U, SWAM_OP_I32_ATOMIC_RMW16_SUB_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(240U, SWAM_OP_I64_ATOMIC_RMW16_SUB_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW SUB: W=4 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(247U, SWAM_OP_I32_ATOMIC_RMW_SUB,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(254U, SWAM_OP_I64_ATOMIC_RMW32_SUB_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW SUB: W=8 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(261U, SWAM_OP_I64_ATOMIC_RMW_SUB,
+                                SWAM_OPCLASS_ATOMIC_RMW, 8U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW AND: W=1 (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(268U, SWAM_OP_I32_ATOMIC_RMW8_AND_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(272U, SWAM_OP_I64_ATOMIC_RMW8_AND_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW AND: W=2 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(276U, SWAM_OP_I32_ATOMIC_RMW16_AND_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(283U, SWAM_OP_I64_ATOMIC_RMW16_AND_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW AND: W=4 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(290U, SWAM_OP_I32_ATOMIC_RMW_AND,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(297U, SWAM_OP_I64_ATOMIC_RMW32_AND_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW AND: W=8 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(304U, SWAM_OP_I64_ATOMIC_RMW_AND,
+                                SWAM_OPCLASS_ATOMIC_RMW, 8U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW OR: W=1 (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(311U, SWAM_OP_I32_ATOMIC_RMW8_OR_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(315U, SWAM_OP_I64_ATOMIC_RMW8_OR_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW OR: W=2 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(319U, SWAM_OP_I32_ATOMIC_RMW16_OR_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(326U, SWAM_OP_I64_ATOMIC_RMW16_OR_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW OR: W=4 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(333U, SWAM_OP_I32_ATOMIC_RMW_OR,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(340U, SWAM_OP_I64_ATOMIC_RMW32_OR_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW OR: W=8 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(347U, SWAM_OP_I64_ATOMIC_RMW_OR,
+                                SWAM_OPCLASS_ATOMIC_RMW, 8U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XOR: W=1 (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(354U, SWAM_OP_I32_ATOMIC_RMW8_XOR_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(358U, SWAM_OP_I64_ATOMIC_RMW8_XOR_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XOR: W=2 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(362U, SWAM_OP_I32_ATOMIC_RMW16_XOR_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(369U, SWAM_OP_I64_ATOMIC_RMW16_XOR_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XOR: W=4 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(376U, SWAM_OP_I32_ATOMIC_RMW_XOR,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(383U, SWAM_OP_I64_ATOMIC_RMW32_XOR_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XOR: W=8 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(390U, SWAM_OP_I64_ATOMIC_RMW_XOR,
+                                SWAM_OPCLASS_ATOMIC_RMW, 8U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XCHG: W=1 (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(397U, SWAM_OP_I32_ATOMIC_RMW8_XCHG_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(401U, SWAM_OP_I64_ATOMIC_RMW8_XCHG_U, SWAM_OPCLASS_ATOMIC_RMW,
+                             SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XCHG: W=2 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(405U, SWAM_OP_I32_ATOMIC_RMW16_XCHG_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(412U, SWAM_OP_I64_ATOMIC_RMW16_XCHG_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 2U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XCHG: W=4 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(419U, SWAM_OP_I32_ATOMIC_RMW_XCHG,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(426U, SWAM_OP_I64_ATOMIC_RMW32_XCHG_U,
+                                SWAM_OPCLASS_ATOMIC_RMW, 4U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic RMW XCHG: W=8 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(433U, SWAM_OP_I64_ATOMIC_RMW_XCHG,
+                                SWAM_OPCLASS_ATOMIC_RMW, 8U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic Cmpxchg: W=1 (4 scenarios each) --- */
+    SWAM_ATOMIC_W1_SCENARIOS(440U, SWAM_OP_I32_ATOMIC_RMW8_CMPXCHG_U,
+                             SWAM_OPCLASS_ATOMIC_CMPXCHG, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_W1_SCENARIOS(444U, SWAM_OP_I64_ATOMIC_RMW8_CMPXCHG_U,
+                             SWAM_OPCLASS_ATOMIC_CMPXCHG, SWAM_VALTYPE_I64),
+
+    /* --- Atomic Cmpxchg: W=2 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(448U, SWAM_OP_I32_ATOMIC_RMW16_CMPXCHG_U,
+                                SWAM_OPCLASS_ATOMIC_CMPXCHG, 2U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(455U, SWAM_OP_I64_ATOMIC_RMW16_CMPXCHG_U,
+                                SWAM_OPCLASS_ATOMIC_CMPXCHG, 2U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic Cmpxchg: W=4 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(462U, SWAM_OP_I32_ATOMIC_RMW_CMPXCHG,
+                                SWAM_OPCLASS_ATOMIC_CMPXCHG, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(469U, SWAM_OP_I64_ATOMIC_RMW32_CMPXCHG_U,
+                                SWAM_OPCLASS_ATOMIC_CMPXCHG, 4U, SWAM_VALTYPE_I64),
+
+    /* --- Atomic Cmpxchg: W=8 (7 scenarios each) --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(476U, SWAM_OP_I64_ATOMIC_RMW_CMPXCHG,
+                                SWAM_OPCLASS_ATOMIC_CMPXCHG, 8U, SWAM_VALTYPE_I64),
+
+    /* --- Wait/Notify scenarios --- */
+    SWAM_ATOMIC_ALIGN_SCENARIOS(483U, SWAM_OP_MEMORY_ATOMIC_WAIT32,
+                                SWAM_OPCLASS_ATOMIC_WAIT, 4U, SWAM_VALTYPE_I32),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(490U, SWAM_OP_MEMORY_ATOMIC_WAIT64,
+                                SWAM_OPCLASS_ATOMIC_WAIT, 8U, SWAM_VALTYPE_I64),
+    SWAM_ATOMIC_ALIGN_SCENARIOS(497U, SWAM_OP_MEMORY_ATOMIC_NOTIFY,
+                                SWAM_OPCLASS_ATOMIC_NOTIFY, 4U, SWAM_VALTYPE_I32),
+
+    /* --- SIMD v128 non-lane loads: 13 ops x 4 = 52 scenarios --- */
+    SWAM_LAYOUT_SCENARIOS(504U, SWAM_OP_V128_LOAD, SWAM_OPCLASS_SIMD_LOAD, 16U, false, SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(507U, SWAM_OP_V128_LOAD, SWAM_OPCLASS_SIMD_LOAD, 16U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(508U, SWAM_OP_V128_LOAD8X8_S, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(511U, SWAM_OP_V128_LOAD8X8_S, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(512U, SWAM_OP_V128_LOAD8X8_U, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(515U, SWAM_OP_V128_LOAD8X8_U, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(516U, SWAM_OP_V128_LOAD16X4_S, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(519U, SWAM_OP_V128_LOAD16X4_S, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(520U, SWAM_OP_V128_LOAD16X4_U, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(523U, SWAM_OP_V128_LOAD16X4_U, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(524U, SWAM_OP_V128_LOAD32X2_S, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(527U, SWAM_OP_V128_LOAD32X2_S, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(528U, SWAM_OP_V128_LOAD32X2_U, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(531U, SWAM_OP_V128_LOAD32X2_U, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(532U, SWAM_OP_V128_LOAD8_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 1U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(535U, SWAM_OP_V128_LOAD8_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 1U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(536U, SWAM_OP_V128_LOAD16_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 2U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(539U, SWAM_OP_V128_LOAD16_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 2U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(540U, SWAM_OP_V128_LOAD32_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 4U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(543U, SWAM_OP_V128_LOAD32_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 4U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(544U, SWAM_OP_V128_LOAD64_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(547U, SWAM_OP_V128_LOAD64_SPLAT, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(548U, SWAM_OP_V128_LOAD32_ZERO, SWAM_OPCLASS_SIMD_LOAD, 4U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(551U, SWAM_OP_V128_LOAD32_ZERO, SWAM_OPCLASS_SIMD_LOAD, 4U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(552U, SWAM_OP_V128_LOAD64_ZERO, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(555U, SWAM_OP_V128_LOAD64_ZERO, SWAM_OPCLASS_SIMD_LOAD, 8U, false,
+                           SWAM_VALTYPE_V128),
+
+    /* --- SIMD v128 lane loads: 4 ops x 4 = 16 scenarios --- */
+    SWAM_LAYOUT_SCENARIOS(556U, SWAM_OP_V128_LOAD8_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 1U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(559U, SWAM_OP_V128_LOAD8_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 1U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(560U, SWAM_OP_V128_LOAD16_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 2U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(563U, SWAM_OP_V128_LOAD16_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 2U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(564U, SWAM_OP_V128_LOAD32_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 4U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(567U, SWAM_OP_V128_LOAD32_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 4U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(568U, SWAM_OP_V128_LOAD64_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(571U, SWAM_OP_V128_LOAD64_LANE, SWAM_OPCLASS_SIMD_LOAD_LANE, 8U, false,
+                           SWAM_VALTYPE_V128),
+
+    /* --- SIMD v128 store: 1 op x 4 = 4 scenarios --- */
+    SWAM_LAYOUT_SCENARIOS(572U, SWAM_OP_V128_STORE, SWAM_OPCLASS_SIMD_STORE, 16U, false, SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(575U, SWAM_OP_V128_STORE, SWAM_OPCLASS_SIMD_STORE, 16U, false,
+                           SWAM_VALTYPE_V128),
+
+    /* --- SIMD v128 lane stores: 4 ops x 4 = 16 scenarios --- */
+    SWAM_LAYOUT_SCENARIOS(576U, SWAM_OP_V128_STORE8_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 1U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(579U, SWAM_OP_V128_STORE8_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 1U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(580U, SWAM_OP_V128_STORE16_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 2U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(583U, SWAM_OP_V128_STORE16_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 2U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(584U, SWAM_OP_V128_STORE32_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 4U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(587U, SWAM_OP_V128_STORE32_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 4U, false,
+                           SWAM_VALTYPE_V128),
+    SWAM_LAYOUT_SCENARIOS(588U, SWAM_OP_V128_STORE64_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 8U, false,
+                          SWAM_VALTYPE_V128),
+    SWAM_OVERFLOW_SCENARIO(591U, SWAM_OP_V128_STORE64_LANE, SWAM_OPCLASS_SIMD_STORE_LANE, 8U, false,
+                           SWAM_VALTYPE_V128),
+
+    /* --- Bulk memory: 3 ops x 3 = 9 scenarios --- */
+    SWAM_BULK_SCENARIOS(592U, SWAM_OP_MEMORY_COPY, SWAM_OPCLASS_BULK_COPY),
+    SWAM_BULK_SCENARIOS(595U, SWAM_OP_MEMORY_FILL, SWAM_OPCLASS_BULK_FILL),
+    SWAM_BULK_SCENARIOS(598U, SWAM_OP_MEMORY_INIT, SWAM_OPCLASS_BULK_INIT),
+};
+
+#undef SWAM_BULK_SCENARIOS
+#undef SWAM_ATOMIC_ALIGN_SCENARIOS
+#undef SWAM_ATOMIC_W1_SCENARIOS
+#undef SWAM_OVERFLOW_SCENARIO
+#undef SWAM_MEMORY_GROW_SCENARIOS
+#undef SWAM_LAYOUT_SCENARIOS
+#undef SWAM_SCENARIO_ENTRY
+
+#define SWAM_SCENARIO_COUNT \
+    (sizeof(swam_scenario_catalog) / sizeof(swam_scenario_catalog[0]))
+
+static inline uint32_t swam_scenario_count(void) {
+    return (uint32_t)SWAM_SCENARIO_COUNT;
+}
+
+static inline const SwamScenario *swam_get_scenario(uint32_t id) {
+    if (id < 1U || id > (uint32_t)SWAM_SCENARIO_COUNT) return 0;
+    return &swam_scenario_catalog[id - 1U];
+}
+
+static inline const SwamScenario *swam_get_random_scenario(uint32_t rand_val) {
+    return &swam_scenario_catalog[rand_val % (uint32_t)SWAM_SCENARIO_COUNT];
+}
+
+#endif  // SWAM_SCENARIOS_H
